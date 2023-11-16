@@ -1,12 +1,15 @@
 var express = require('express');
-var router = express.Router();
 const Categories = require("../db/models/Categories");
 const Response = require("../lib/Response")
 const CustomError = require('../lib/Error');
 const Enum = require("../config/Enum")
 const AuditLog= require("../lib/AuditLogs")
 const LoggerClass = require("../lib/logger/LoggerClass");
-
+const auth =require("../lib/auth")();
+var router = express.Router();
+router.all("*",auth.authenticate(),(req,res,next)=>{
+    next();
+  })
 
 router.get('/', async (req,res,next)=>{
     try {

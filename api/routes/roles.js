@@ -1,12 +1,18 @@
 const express = require('express')
-const router = express.Router()
-
 const Roles = require("../db/models/Roles")
 const RolePrivileges = require("../db/models/RolePrivileges")
 const Response = require('../lib/Response')
 const CustomError = require('../lib/Error')
 const Enum = require('../config/Enum')
 const role_privileges = require('../config/role_privileges')
+const auth = require("../lib/auth")();
+
+const router = express.Router()
+
+router.all("*",auth.authenticate(),(req,res,next)=>{
+    next();
+ })
+
 
 router.get('/',async (req,res)=>{
 try {
@@ -27,7 +33,7 @@ router.post('/',async (req,res)=>{
         if(!permissions || !Array.isArray(permissions) || permissions.length == 0) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,'Validation error','permissions filed must be filled')
         const roles = new Roles({
             role_name,
-            //created_by:req.user?.id
+            created_by:req.user?.id
         })
 
         await roles.save();
@@ -36,7 +42,7 @@ router.post('/',async (req,res)=>{
             let priv = new RolePrivileges({
                 role_id:roles._id,
                 permissions:permissions[i],
-                //created_by:req.user?.id
+                created_by:req.user?.id
             })
             await priv.save();
         }
@@ -85,7 +91,7 @@ router.put('/:id',async (req,res)=>{
                     let priv= new RolePrivileges({
                         role_id:id,
                         permissions:newPermissions[i],
-                        //created_by:req.user?.id
+                        created_by:req.user?.id
 
                     })
 
