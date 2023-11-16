@@ -23,6 +23,7 @@ module.exports = function () {
 
                 done(null, {
                     id: user._id,
+                    email:user.email,
                     roles: rolePrivileges,
                     firs_name: user.first_name,
                     last_name: user.last_name,
