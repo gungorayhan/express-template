@@ -1,12 +1,15 @@
 var express = require('express');
 const bcrypt = require("bcrypt-nodejs")
-const is = require("is_js")
+const is = require("is_js");
+const jwt = require("jwt-simple");
+
 const Enum = require("../config/Enum")
 const Users = require("../db/models/Users")
 const Response = require("../lib/Response")
 const CustomError = require("../lib/Error")
 const UserRoles = require("../db/models/UserRoles")
-const Roles = require("../db/models/Roles")
+const Roles = require("../db/models/Roles");
+const config = require('../config');
 var router = express.Router();
 
 
@@ -164,6 +167,38 @@ router.delete('/:id',async (req,res)=>{
     await Users.deleteOne({_id:id})
     await UserRoles.deleteMany({_id:id})
     res.json(Response.successResponse({success:true}))
+  } catch (error) {
+    const errorResponse= Response.errorResponse(error)
+    res.status(errorResponse.code).json(errorResponse)
+  }
+})
+
+router.post('/auth',async (req,res)=>{
+  const {email,password}=req.body;
+  
+  try {
+    Users.validateFieldsBeforeAuth(email,password);
+    
+    let user = await Users.findOne({email});
+
+    if(!user) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED,"Validated fields!","password or email wrong")
+
+    if(!user.validPassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED,"Validated fields!","password or email wrong")
+
+    let payload={
+      id:user._id,
+      exp:parseInt(Date.now() / 1000) * config.JWT.EXPIRE_TIME
+    }
+    let userData={
+      _id:user._id,
+      first_name:user.first_name,
+      last_name:user.last_name
+    }
+    
+
+    let token = jwt.encode(payload,config.JWT.SECRET);
+    res.json(Response.successResponse({token, user:userData}));
+
   } catch (error) {
     const errorResponse= Response.errorResponse(error)
     res.status(errorResponse.code).json(errorResponse)
