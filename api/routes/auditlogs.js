@@ -10,7 +10,7 @@ router.all("*",auth.authenticate(),(req,res,next)=>{
 })
 
 /* GET users listing. */
-router.post('/', async (req, res) => {
+router.post('/',auth.checkRoles("auditlogs_view"), async (req, res) => {
   let body = req.body
   let query = {}
   let skip = body.skip

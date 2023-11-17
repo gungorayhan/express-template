@@ -9,7 +9,7 @@ const schema = mongoose.Schema({
     is_active:{type:Boolean,default:true},
     first_name:String,
     last_name:String,
-    phone_number:String
+    phone_number:String,
 },{
     versiyonKey:false,
     timestamps:{

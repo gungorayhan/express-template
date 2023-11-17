@@ -14,7 +14,7 @@ router.all("*",auth.authenticate(),(req,res,next)=>{
  })
 
 
-router.get('/',async (req,res)=>{
+router.get('/',auth.checkRoles("roles_views"), async (req,res)=>{
 try {
     let roles= await Roles.find({});
     res.json(Response.successResponse(roles))
@@ -25,7 +25,7 @@ try {
 })
 
 
-router.post('/',async (req,res)=>{
+router.post('/', auth.checkRoles("roles_add"), async (req,res)=>{
     const {role_name,permissions}= req.body;
     console.log(req.body)
     try {
@@ -54,7 +54,7 @@ router.post('/',async (req,res)=>{
     }
 })
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id', auth.checkRoles("roles_update"),async (req,res)=>{
     const {role_name,is_active,permissions}= req.body;
     const {id}= req.params;
     
@@ -113,7 +113,7 @@ router.put('/:id',async (req,res)=>{
     }
 })
 
-router.delete('/:id',async (req,res)=>{
+router.delete('/:id', auth.checkRoles("roles_delete"),async (req,res)=>{
 
     const {id}= req.params;
     try {

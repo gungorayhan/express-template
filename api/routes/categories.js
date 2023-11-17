@@ -6,12 +6,14 @@ const Enum = require("../config/Enum")
 const AuditLog= require("../lib/AuditLogs")
 const LoggerClass = require("../lib/logger/LoggerClass");
 const auth =require("../lib/auth")();
+
 var router = express.Router();
+
 router.all("*",auth.authenticate(),(req,res,next)=>{
     next();
-  })
+})
 
-router.get('/', async (req,res,next)=>{
+router.get('/',auth.checkRoles("category_views"), async (req,res,next)=>{
     try {
         let categories = await Categories.find({});
 
@@ -22,7 +24,7 @@ router.get('/', async (req,res,next)=>{
     }
 });
 
-router.post('/', async (req,res)=>{
+router.post('/',auth.checkRoles("category_add"),  async (req,res)=>{
     const {name}=req.body;
     try {
         if(!name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error!","name fields must be filled")
@@ -44,7 +46,7 @@ router.post('/', async (req,res)=>{
     }
 })
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id',auth.checkRoles("category_update"), async (req,res)=>{
     const {name,is_active} = req.body;
     const {id} = req.params;
 console.log(id)
@@ -68,7 +70,7 @@ console.log(id)
 
 })
 
-router.delete('/:id',async (req,res)=>{
+router.delete('/:id',auth.checkRoles("category_delete"), async (req,res)=>{
     const {id}= req.params;
 
     try {

@@ -98,7 +98,7 @@ router.all("*",auth.authenticate(),(req,res,next)=>{
 })
 
 
-router.get('/', async (req, res) => {
+router.get('/', auth.checkRoles("user_view"), async (req, res) => {
   try {
 
     let users = await Users.find({})
@@ -109,7 +109,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-router.post('/', async (req, res) => {
+router.post('/',auth.checkRoles("user_add"), async (req, res) => {
   const { email, password, first_name, last_name, phone_number,roles } = req.body;
 
   try {
@@ -153,9 +153,10 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.put('/:id',async (req,res)=>{
+router.put('/:id',auth.checkRoles("user_update"),async (req,res)=>{
   const {email,password,last_name,first_name,phone_number,roles}= req.body;
   const {id}= req.params;
+  
   try {
 
     if(!id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error","id field must be")
@@ -166,8 +167,9 @@ router.put('/:id',async (req,res)=>{
       let userRoles = await UserRoles.find({})
 
       let removedRoles = userRoles.filter(x=>!roles.includes(x.role_id.toString())) // veri tabanında gelen veriler arasında body den gelen veriler yok ise romevedRoles değişkenine ata
-      let newRoles = roles.filter(x=>!userRoles.map(r.role_id).includes(x)) // body den gelen veriler arasında veri tabanında kayıtlı verilerden var ise tekrar atamamak adına filtreleme yapıyoruz 
-
+     
+      let newRoles = roles.filter(x=>!userRoles.map(r=>r.role_id).includes(x)) // body den gelen veriler arasında veri tabanında kayıtlı verilerden var ise tekrar atamamak adına filtreleme yapıyoruz 
+ 
       if(removedRoles.length>0){
         await UserRoles.deleteMany({_id:{$in:removedRoles.map(x=>x._id.toString())}})
       }
@@ -199,7 +201,7 @@ router.put('/:id',async (req,res)=>{
   }
 })
 
-router.delete('/:id',async (req,res)=>{
+router.delete('/:id',auth.checkRoles("user_delete"),async (req,res)=>{
   const {id} = req.params;
 
   try {
