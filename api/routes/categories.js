@@ -6,7 +6,8 @@ const Enum = require("../config/Enum")
 const AuditLog= require("../lib/AuditLogs")
 const LoggerClass = require("../lib/logger/LoggerClass");
 const auth =require("../lib/auth")();
-
+const config = require("../config")
+const i18n = require('../lib/i18n')(config.DEFAULT_LANG)
 var router = express.Router();
 
 router.all("*",auth.authenticate(),(req,res,next)=>{
@@ -27,7 +28,7 @@ router.get('/',auth.checkRoles("category_views"), async (req,res,next)=>{
 router.post('/',auth.checkRoles("category_add"),  async (req,res)=>{
     const {name}=req.body;
     try {
-        if(!name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error!","name fields must be filled")
+        if(!name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["name"]))
 
         let category = new Categories({
             name:name,
@@ -53,7 +54,7 @@ console.log(id)
     try {
         
     if(!id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error!","id field must be filled")
-    if(!name || typeof is_active ==="boolean") throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error!","name and is_active fields must be filled")
+    if(!name || typeof is_active ==="boolean") throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["name"]))
 
    const updated = await Categories.updateOne({_id:id},{
         name,
@@ -75,7 +76,7 @@ router.delete('/:id',auth.checkRoles("category_delete"), async (req,res)=>{
 
     try {
 
-        if(!id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,"Validation Error!","id field must be filled")
+        if(!id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["id"]))
 
         await Categories.deleteOne({_id:id})
         AuditLog.info(req.user?.email,"Categories","Update",{_id:id})
