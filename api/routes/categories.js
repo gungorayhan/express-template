@@ -9,8 +9,25 @@ const auth =require("../lib/auth")();
 const config = require('../config/index')
 const emitter = require('../lib/Emitter');
 const i18n = new (require("../lib/i18n"))(config.DEFAULT_LANG);
+const excelExport = new (require("../lib/Export"))();
+const fs = require("fs");
+const path = require("path")
+const multer = require("multer")
+const Import = new (require("../lib/Import"))(); 
+
 
 var router = express.Router();
+
+let multerStorage=multer.diskStorage({
+    destination:(req,file,next)=>{
+        next(null,config.FILE_UPLOAD_PATH)
+    },
+    filename:(req,file,next)=>{
+        next(null,file.fieldname + "_" + Date.now() + path.extname(file.originalname))
+    }
+})
+
+let upload = multer({storage:multerStorage}).single("pb_file")
 
 router.all("*",auth.authenticate(),(req,res,next)=>{
     next();
@@ -91,5 +108,54 @@ router.delete('/:id',auth.checkRoles("category_delete"), async (req,res)=>{
         res.status(errorResponse.code).json(Response.errorResponse(error))
     }
 })
+
+//auth.checkRoles("category_export")
+router.post("/export",upload ,async(req,res)=>{
+
+    try {
+        let categories= await Categories.find({});
+        let excel = excelExport.toExcel(
+            ["Name","IS ACTIVE?","USER_ID","CREATED_BY","UPDATED_BY"],
+            ["name",'is_active','created_by','created_at','created_update'],
+            categories
+        )
+        
+
+        let filePath =__dirname+"/../tmp/categories_excell_" + Date.now() + ".xlsx";
+        
+        fs.writeFileSync(filePath,excel,"UTF-8");
+
+        res.download(filePath);
+
+         // fs.unlinkSync(filePath);
+    } catch (error) {
+        let errorResponse= Response.errorResponse(error);
+        res.status(errorResponse.code).json(errorResponse)
+    }
+})
+
+router.post("/import", async (req,res)=>{
+    try {
+        const file= req.file;
+        const body= req.body;
+        let rows = Import .fromExcel(file.path);
+        for(let i=1; i<rows.length;i++){
+            let [name,is_active,user,created_at,updated_at]=rows[i];
+            if(name){
+            await Categories.create({
+                name,
+                is_active,
+                created_by:req.user._id
+            })
+        }
+        }
+
+        res.status(Enum.HTTP_CODES.CREATED).json(Response.successResponse(req.body,Enum.HTTP_CODES.CREATED));
+    } catch (error) {
+        const errorResponse = new Response.errorResponse(error)
+        res.status(errorResponse.code).json(errorResponse); 
+    }
+})
+
 
 module.exports = router;
