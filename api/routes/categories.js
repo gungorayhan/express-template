@@ -9,7 +9,9 @@ const auth =require("../lib/auth")();
 const config = require('../config/index')
 const emitter = require('../lib/Emitter');
 const i18n = new (require("../lib/i18n"))(config.DEFAULT_LANG);
-
+const excelExport = new (require("../lib/Export"))();
+const fs = require("fs");
+const path = require("path")
 var router = express.Router();
 
 router.all("*",auth.authenticate(),(req,res,next)=>{
@@ -91,5 +93,32 @@ router.delete('/:id',auth.checkRoles("category_delete"), async (req,res)=>{
         res.status(errorResponse.code).json(Response.errorResponse(error))
     }
 })
+
+//auth.checkRoles("category_export")
+router.post("/export",async(req,res)=>{
+
+    try {
+        let categories= await Categories.find({});
+        let excel = excelExport.toExcel(
+            ["Name","IS ACTIVE?","USER_ID","CREATED_BY","UPDATED_BY"],
+            ["name",'is_active','created_by','created_at','created_update'],
+            categories
+        )
+        
+
+        let filePath =__dirname+"/../tmp/categories_excell_" + Date.now() + ".xlsx";
+        
+        fs.writeFileSync(filePath,excel,"UTF-8");
+
+        res.download(filePath);
+
+         // fs.unlinkSync(filePath);
+    } catch (error) {
+        let errorResponse= Response.errorResponse(error);
+        res.status(errorResponse.code).json(errorResponse)
+    }
+})
+
+
 
 module.exports = router;
