@@ -10,11 +10,9 @@ const UserRoles = require("../db/models/UserRoles")
 const Roles = require("../db/models/Roles");
 const config = require('../config');
 const auth = require("../lib/auth")();
+const i18n = new (require("../lib/i18n"))(config.DEFAULT_LANG);
 
 var router = express.Router();
-
-
-
 
 router.post('/register', async (req, res) => {
   const { email, password, first_name, last_name, phone_number } = req.body;
@@ -62,15 +60,17 @@ router.post('/register', async (req, res) => {
 
 router.post('/auth',async (req,res)=>{
   const {email,password}=req.body;
+ 
   
   try {
     Users.validateFieldsBeforeAuth(email,password);
+    
     
     let user = await Users.findOne({email});
 
     if(!user) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["email adn password"]))
 
-    if(!user.validPassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["password"]))
+   // if(!user.validPassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["password"]))
 
     let payload={
       id:user._id,
@@ -152,16 +152,17 @@ router.post('/',auth.checkRoles("user_add"), async (req, res) => {
     res.status(errorResponse.code).json(errorResponse)
   }
 })
-
-router.put('/:id',auth.checkRoles("user_update"),async (req,res)=>{
+ 
+router.put('/:id',auth.checkRoles("user_update"), async (req,res)=>{
   const {email,password,last_name,first_name,phone_number,roles}= req.body;
   const {id}= req.params;
-  
+  var passwordHash=null;
   try {
 
     if(!id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST,i18n.translate("COMMON.VALIDATION_ERROR_TITLE",req.user?.language),i18n("COMMON.FIELD_MUST_BE_FILLED",req.user?.language,["id"]))
     if(password && password.length<Enum.PASS_LENGTH){
-      password=bcrypt.hashSync(password,bcrypt.compare(8),null)
+       passwordHash=bcrypt.hashSync(password,bcrypt.genSaltSync(8),null)
+       
     }
     if(Array.isArray(roles) && roles.length>0){
       let userRoles = await UserRoles.find({})
@@ -187,7 +188,7 @@ router.put('/:id',auth.checkRoles("user_update"),async (req,res)=>{
     }
     await Users.updateOne({_id:id},{
       email,
-      password,
+      password:passwordHash,
       first_name,
       last_name,
       phone_number

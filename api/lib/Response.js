@@ -1,7 +1,8 @@
 const Enum = require("../config/Enum")
 const config = require('../config/index')
 const CustomError = require("../lib/Error")
-const i18n=require("../lib/i18n")(config.DEFAULT_LANG);
+const i18n=new (require("./i18n"))(config.DEFAULT_LANG);
+
 class Response {
     constructor() { }
 
@@ -21,15 +22,17 @@ class Response {
                     description: error.description
                 }
             }
-        }else if(error.message.includes("E11000")) {
-            return {
-                code:Enum.HTTP_CODES.CONFLICT,
-                error: {
-                    message:i18n.translate("COMMON.ALREADY_EXIST",lang),
-                    description: i18n.translate("COMMON.ALREADY_EXIST",lang),
-                }
-            }
         }
+        
+        // else if(error.message.includes("E11000")) {
+        //     return {
+        //         code:Enum.HTTP_CODES.CONFLICT,
+        //         error: {
+        //             message:i18n.translate("COMMON.ALREADY_EXIST",lang),
+        //             description: i18n.translate("COMMON.ALREADY_EXIST",lang),
+        //         }
+        //     }
+        // }
 
         return {
             code:Enum.HTTP_CODES.INT_SERVER_ERROR,
