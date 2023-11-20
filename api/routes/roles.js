@@ -6,7 +6,8 @@ const CustomError = require('../lib/Error')
 const Enum = require('../config/Enum')
 const role_privileges = require('../config/role_privileges')
 const auth = require("../lib/auth")();
-
+const config= require('../config')
+const i18n = new (require("../lib/i18n"))(config.DEFAULT_LANG);
 const router = express.Router()
 
 router.all("*",auth.authenticate(),(req,res,next)=>{
